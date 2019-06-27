@@ -1,6 +1,7 @@
 package network;
 
 import core.Permission;
+import core.PermissionException;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
@@ -8,178 +9,132 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.StatusType;
 import javax.ws.rs.core.Response.Status.Family;
+import javax.xml.ws.http.HTTPException;
 import java.util.ArrayList;
 
 public class Worker
 {
-    protected final ArrayList<Permission> permissions;
+    private final ArrayList<Permission> permissions;
 
-    protected final Client client;
-    protected final String serverAddress;
-    protected final String name;
+    public final Client client;
+    public final String serverAddress;
+    public final String name;
 
-    protected Worker(Client client, String serverAddress, String name, String[] permissions)
+    public Worker(Client client, String serverAddress, String name, ArrayList<Permission> permissions)
     {
-        this.permissions = new ArrayList<Permission>()
-        {{
-            for (String permissionName: permissions)
-                add(Permission.valueOf(permissionName));
-        }};
-
+        this.permissions = permissions;
         this.client = client;
         this.serverAddress = serverAddress;
         this.name = name;
     }
 
-    protected Worker(Client client, String serverAddress, String name) throws Exception
+    private void checkPermission(Permission permission) throws PermissionException
     {
-        this.client = client;
-        this.serverAddress = serverAddress;
-        this.name = name;
-
-        this.permissions = new ArrayList<Permission>()
-        {{
-            for (String permissionName: permissionsOption())
-                add(Permission.valueOf(permissionName));
-        }};
+        if ( !permissions.contains(permission) ) throw new PermissionException(permission, name);
     }
 
-    private String[] permissionsOption() throws Exception
+    private <T> T handleResponse(Response response, Class<T> clazz) throws HTTPException
     {
-        return handleResponse(optionResponse(""), String[].class);
+        if (response.getStatusInfo().getFamily() != Family.SUCCESSFUL) throw new HTTPException(response.getStatus());
+
+        return (clazz == Boolean.class) ? (T) new Boolean(true) : response.readEntity(clazz);
     }
 
-    private boolean checkPermission(Permission permission)
+    private boolean handleResponse(Response response) throws HTTPException
     {
-        if ( permissions.contains(permission) )
+        return handleResponse(response, Boolean.class);
+    }
+
+    private Invocation.Builder buildRequest(String... additionalPath)
+    {
+        WebTarget target = client.target(serverAddress).path(name);
+
+        for (String path: additionalPath)
         {
-            return true;
+            target = target.path(path);
         }
 
-        System.err.println("The category as '" + name + "' doesn't have the permission.");
-
-        return false;
+        return target.request(MediaType.APPLICATION_JSON);
     }
 
-    protected <T> T handleResponse(Response response, Class<T> clazz)
+    public <T> T option(String additionalPath, Class<T> clazz) throws HTTPException
     {
-        StatusType status = response.getStatusInfo();
-        if (status.getFamily() != Family.SUCCESSFUL)
-        {
-            System.err.println( status.getStatusCode() + " - " + status.getReasonPhrase() );
-
-            return null;
-        }
-
-        return response.readEntity(clazz);
+        return handleResponse(buildRequest(additionalPath).options(), clazz);
     }
 
-    protected boolean handleResponse(Response response)
+    public <T> T option(Class<T> clazz) throws HTTPException
     {
-        StatusType status = response.getStatusInfo();
-        if (status.getFamily() != Family.SUCCESSFUL)
-        {
-            System.err.println( status.getStatusCode() + " - " + status.getReasonPhrase() );
-
-            return false;
-        }
-
-        return true;
+        return option("", clazz);
     }
 
-    protected Response optionResponse(String additionalPath) throws Exception
+    public <T> T get(String additionalPath, Class<T> clazz) throws PermissionException, HTTPException
     {
-        WebTarget webTarget = client.target(serverAddress).path(name).path(additionalPath);
-        Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
+        checkPermission(Permission.GET);
 
-        return invocationBuilder.options();
+        return handleResponse(buildRequest(additionalPath).get(), clazz);
     }
 
-    protected Response getResponse(String additionalPath) throws Exception
+    public <T> T get(Class<T> clazz) throws PermissionException, HTTPException
     {
-        if ( checkPermission(Permission.GET) )
-        {
-            WebTarget webTarget = client.target(serverAddress).path(name).path(additionalPath);
-            Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
-
-            return invocationBuilder.get();
-        }
-
-        return null;
+        return get("", clazz);
     }
 
-    protected Response postResponse(Entity entity, String additionalPath) throws Exception
+    public boolean post(String additionalPath, Entity entity) throws PermissionException, HTTPException
     {
-        if ( checkPermission(Permission.POST) )
-        {
-            WebTarget webTarget = client.target(serverAddress).path(name).path(additionalPath);
-            Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
+        checkPermission(Permission.POST);
 
-            return invocationBuilder.post(entity);
-        }
-
-        return null;
+        return handleResponse(buildRequest(additionalPath).post(entity));
     }
 
-    protected Response deleteResponse(String additionalPath) throws Exception
+    public boolean post(Entity entity) throws PermissionException, HTTPException
     {
-        if ( checkPermission(Permission.DELETE) )
-        {
-            WebTarget webTarget = client.target(serverAddress).path(name).path(additionalPath);
-            Invocation.Builder invocationBuilder =  webTarget.request(MediaType.APPLICATION_JSON);
-
-            return invocationBuilder.delete();
-        }
-
-        return null;
+        return post("", entity);
     }
 
-    protected Response putResponse(Entity entity, String additionalPath) throws Exception
+    public boolean delete(String additionalPath) throws PermissionException, HTTPException
     {
-        if ( checkPermission(Permission.PUT) )
-        {
-            WebTarget webTarget = client.target(serverAddress).path(name).path(additionalPath);
-            Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
+        checkPermission(Permission.DELETE);
 
-            return invocationBuilder.put(entity);
-        }
-
-        return null;
+        return handleResponse(buildRequest(additionalPath).delete());
     }
 
-    protected Response patchResponse(Entity entity, String additionalPath) throws Exception
+    public boolean delete() throws PermissionException, HTTPException
     {
-        if ( checkPermission(Permission.PATCH) )
-        {
-            WebTarget webTarget = client.target(serverAddress).path(name).path(additionalPath);
-            Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
-
-            return invocationBuilder.method("PATCH", entity);
-        }
-
-        return null;
+        return delete("");
     }
 
-    public Client getClient()
+    public boolean put(String additionalPath, Entity entity) throws PermissionException, HTTPException
     {
-        return client;
+        checkPermission(Permission.PUT);
+
+        return handleResponse(buildRequest(additionalPath).put(entity));
     }
 
-    public String getServerAddress()
+    public boolean put(Entity entity) throws PermissionException, HTTPException
     {
-        return serverAddress;
+        return put(entity);
     }
 
-    public String getName()
+    public boolean patch(String additionalPath, Entity entity) throws PermissionException, HTTPException
     {
-        return name;
+        checkPermission(Permission.PATCH);
+
+        return handleResponse(buildRequest(additionalPath).method("PATCH", entity));
+    }
+
+    public boolean patch(Entity entity) throws PermissionException, HTTPException
+    {
+        return patch(entity);
     }
 
     public boolean hasPermissions(String permission)
     {
         return permissions.contains(Permission.valueOf(permission));
+    }
+    public boolean hasPermissions(Permission permission)
+    {
+        return permissions.contains(permission);
     }
 
     public String viewPermissions()
