@@ -58,4 +58,19 @@ public class Currency
     {
         return created_at;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("Currency: id = "); builder.append(id);
+        builder.append(", changeType = "); builder.append(changeType);
+        builder.append(", isDefault = "); builder.append(isDefault);
+        builder.append(", saleExchangeRate = "); builder.append(saleExchangeRate);
+        builder.append(", updated_at = "); builder.append(updated_at);
+        builder.append(", created_at = "); builder.append(created_at);
+        builder.append(".");
+
+        return builder.toString();
+    }
 }
