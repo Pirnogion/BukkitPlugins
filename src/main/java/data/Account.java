@@ -52,4 +52,23 @@ public class Account
     {
         return balances;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("Account: id = ");  builder.append(id);
+        builder.append(", uuid = ");       builder.append(uuid);
+        builder.append(", created_at = "); builder.append(created_at);
+        builder.append(", updated_at = "); builder.append(updated_at);
+        builder.append(". \nBalances: ");
+
+        if ( balances.isEmpty() ) builder.append("none. ");
+        else for (String balance: balances)
+        {
+            builder.append("\n - "); builder.append(balance);
+        }
+
+        return builder.toString();
+    }
 }
