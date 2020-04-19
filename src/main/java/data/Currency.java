@@ -1,32 +1,26 @@
 package data;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.time.LocalDateTime;
+import java.util.Date;
+
 public class Currency
 {
     private int id;
     private int changeType;
     private boolean isDefault;
     private int saleExchangeRate;
-    private String created_at;
-    private String updated_at;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
+    private Date created_at;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
+    private Date updated_at;
 
     public Currency() {}
 
-    public Currency(int id, int changeType, boolean isDefault, int saleExchangeRate, String created_at, String updated_at)
+    public Currency(int id)
     {
         this.id = id;
-        this.changeType = changeType;
-        this.isDefault = isDefault;
-        this.saleExchangeRate = saleExchangeRate;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
-    }
-
-    public Currency(int id, int changeType, boolean isDefault, int saleExchangeRate)
-    {
-        this.id = id;
-        this.changeType = changeType;
-        this.isDefault = isDefault;
-        this.saleExchangeRate = saleExchangeRate;
     }
 
     public int getId()
@@ -49,12 +43,12 @@ public class Currency
         return saleExchangeRate;
     }
 
-    public String getUpdated_at()
+    public Date getUpdatedAt()
     {
         return updated_at;
     }
 
-    public String getCreated_at()
+    public Date getCreatedAt()
     {
         return created_at;
     }
@@ -63,12 +57,18 @@ public class Currency
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
-        builder.append("Currency: id = "); builder.append(id);
-        builder.append(", changeType = "); builder.append(changeType);
-        builder.append(", isDefault = "); builder.append(isDefault);
-        builder.append(", saleExchangeRate = "); builder.append(saleExchangeRate);
-        builder.append(", updated_at = "); builder.append(updated_at);
-        builder.append(", created_at = "); builder.append(created_at);
+        builder.append("Currency: id = ");
+        builder.append(id);
+        builder.append(", changeType = ");
+        builder.append(changeType);
+        builder.append(", isDefault = ");
+        builder.append(isDefault);
+        builder.append(", saleExchangeRate = ");
+        builder.append(saleExchangeRate);
+        builder.append(", updated_at = ");
+        builder.append(updated_at);
+        builder.append(", created_at = ");
+        builder.append(created_at);
         builder.append(".");
 
         return builder.toString();

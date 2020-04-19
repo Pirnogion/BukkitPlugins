@@ -1,16 +1,27 @@
 package data;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Map;
 
 public class Account
 {
     private int id;
     private String uuid;
-    private String created_at;
-    private String updated_at;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
+    private Date created_at;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
+    private Date updated_at;
     private Map<Integer, Integer> balances;
 
     public Account() {}
+
+    public Account(int id)
+    {
+        this.id = id;
+    }
 
     public int getId()
     {
@@ -22,12 +33,12 @@ public class Account
         return uuid;
     }
 
-    public String getCreated_at()
+    public Date getCreatedAt()
     {
         return created_at;
     }
 
-    public String getUpdated_at()
+    public Date getUpdatedAt()
     {
         return updated_at;
     }
